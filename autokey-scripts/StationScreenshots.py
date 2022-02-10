@@ -5,7 +5,7 @@ import subprocess
 from common.ocr import MultithreadOcr, import_news_results
 
 NEWS_PATH = "/home/greg/ed/news/"
-DB_PATH = "/home/greg/ed/news.db"
+DB_PATH = "/home/greg/ed/save.db"
 
 
 def send_key(keychar):
