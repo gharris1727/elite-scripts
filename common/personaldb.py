@@ -562,7 +562,8 @@ class StructuredImport:
     def ShutDown(self, shutdown):
         pass
     def Shutdown(self, shutdown):
-        pass
+        if shutdown:
+            return {**shutdown, 'event': 'ShutDown'}
     def SquadronCreated(self, squadroncreated):
         pass
     def SquadronStartup(self, squadronstartup):
