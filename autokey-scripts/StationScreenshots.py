@@ -1,8 +1,10 @@
 # Send key sequence to attempt docking
+import sqlite3
 import time
 import subprocess
 
 from common.ocr import MultithreadOcr, import_news_results
+from common.personaldb import StructuredImport, Writer
 
 NEWS_PATH = "/home/greg/ed/news/"
 DB_PATH = "/home/greg/ed/save.db"
@@ -48,6 +50,10 @@ for i in range(14):
     send_key(" ")
 send_key("<backspace>")
 try:
-    import_news_results(ocr.get_all(), DB_PATH, True)
+    with sqlite3.connect(DB_PATH) as conn:
+        writer = Writer(conn, False)
+        importer = StructuredImport(writer)
+        import_news_results(ocr.get_all(), importer, True)
+        writer.commit()
 finally:
     ocr.shutdown()

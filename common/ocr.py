@@ -8,8 +8,6 @@ import sys
 import time
 from pathlib import Path
 
-from personaldb import StructuredImport, Writer
-
 NEWS_PATH = "/home/greg/ed/news/"
 DB_PATH = "/home/greg/ed/save.db"
 
@@ -207,31 +205,29 @@ def parse_news_string(string, strict):
     return {}
 
 
-def import_news_results(results, db_path, strict):
-    with sqlite3.connect(db_path) as conn:
-        writer = Writer(conn, False)
-        importer = StructuredImport(writer)
-        for k in results:
-            ts, i = k
-            parsed = parse_news_string(results[k], True)
-            event = {
-                'timestamp': ts,
-                'index': i,
-                'text': results[k],
-                **parsed
-            }
-            if 'event' not in event or event['event'] is None:
-                if strict:
-                    raise Exception("Unable to parse event data from " + json.dumps(results[k]))
-                else:
-                    print("skipping unknown news item", file=sys.stderr)
-                    print(json.dumps(results[k]), file=sys.stderr)
-                    continue
-            importer.event(event)
-        writer.commit()
+def import_news_results(results, importer, strict):
+    for k in results:
+        ts, i = k
+        parsed = parse_news_string(results[k], True)
+        event = {
+            'timestamp': ts,
+            'index': i,
+            'text': results[k],
+            **parsed
+        }
+        if 'event' not in event or event['event'] is None:
+            if strict:
+                raise Exception("Unable to parse event data from " + json.dumps(results[k]))
+            else:
+                print("skipping unknown news item", file=sys.stderr)
+                print(json.dumps(results[k]), file=sys.stderr)
+                continue
+        importer.event(event)
 
 
 if __name__ == '__main__':
+    from personaldb import StructuredImport, Writer
+
     ocr = MultithreadOcr("/tmp/news")
     with os.scandir(NEWS_PATH) as files:
         for file_path in files:
@@ -240,5 +236,8 @@ if __name__ == '__main__':
             index = int(str_index)
             ocr.submit(file_path, (timestamp, index))
 
-    import_news_results(ocr.get_all(), DB_PATH, False)
+    with sqlite3.connect(DB_PATH) as conn:
+        writer = Writer(conn, False)
+        importer = StructuredImport(writer)
+        import_news_results(ocr.get_all(), importer, False)
     ocr.shutdown()

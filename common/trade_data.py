@@ -34,7 +34,6 @@ def get_trade_data(db_path, complete=None, transaction_type=None):
         complete_criteria = """
             StatusBefore.Influence IS NOT NULL
             AND StatusAfter.Influence IS NOT NULL
-            AND Traffic.Ships IS NOT NULL
         """
     elif complete is False:
         complete_criteria = """
@@ -42,7 +41,7 @@ def get_trade_data(db_path, complete=None, transaction_type=None):
                 (StatusBefore.Influence IS NULL AND datetime() < Trades.TickCutoff)
                 OR (
                     StatusBefore.Influence IS NOT NULL
-                    AND (StatusAfter.Influence IS NULL OR Traffic.Ships IS NULL)
+                    AND (StatusAfter.Influence IS NULL)
                     AND (datetime() < Trades.TickWindow)
                 )
             )
@@ -57,7 +56,7 @@ def get_trade_data(db_path, complete=None, transaction_type=None):
     else:
         transaction_criteria = '1=1'
 
-    writer = csv.writer(sys.stdout)
+    writer = csv.writer(sys.stdout, delimiter='\t')
     with sqlite3.connect(db_path) as conn:
         res = conn.execute(f"""
         SELECT
